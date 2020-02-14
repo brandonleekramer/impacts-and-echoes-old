@@ -7,9 +7,9 @@ output: html_document
 
 ```{r setup, include = FALSE}
 rm(list = ls())
-knitr::opts_knit$set(root.dir = "~/Documents/Nutrition")
+knitr::opts_knit$set(root.dir = "~/Documents/Nutrition/impacts-and-echoes/data")
 for (pkg in c("tidyverse", "igraph", "bibliometrix", "tidytext", "ggplot2", "ggraph", "widyr", "plotly", "stringi")) {library(pkg, character.only = TRUE)}
-setwd("~/Documents/Nutrition/Abstracts Dataset/Select Journals (1990-2018)")
+setwd("~/Documents/Nutrition/impacts-and-echoes/data")
 raw_data <- read_csv("select_abstracts (1990-2018).csv")
 ```
 

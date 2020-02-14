@@ -130,7 +130,7 @@ ggsave(file="bigram_network.svg", plot=image, width=10, height=8)
 whc_edgelist <- bigram_counts %>% 
   rename(source = word1,target = word2,weight = n) %>% 
   filter(weight >= 15)
-write_csv(whc_edgelist, "whc-textnet-edgelist.csv")
+#write_csv(whc_edgelist, "whc-textnet-edgelist.csv")
 ```
 
 

@@ -13,11 +13,12 @@ Next, we decided to establish a basic timeline of major events in the nutrition 
 
 **Here is the science timeline...**
 
-```{r science timeline, warning=FALSE, message=FALSE, fig.width=9.5, fig.height=12}
-
+```{r science timeline, warning=FALSE, message=FALSE, fig.width=9.5, fig.height=2}
+setwd("~/Documents/Nutrition/impacts-and-echoes/data")
+timeline_data <- read_csv("interactive_timeline_data - final_timeline.csv")
 
 science_timeline <- timeline_data %>% 
-  filter(group == "Science" | group == "All")
+  filter(domain == "Science" )
 
 timevis(science_timeline)
 ```
@@ -25,16 +26,16 @@ timevis(science_timeline)
 
 **Here is the political timeline...** 
 
-```{r policy timeline, warning=FALSE, message=FALSE, fig.width=9.5, fig.height=12}
+```{r policy timeline, warning=FALSE, message=FALSE, fig.width=9.5, fig.height=3}
 policy_timeline <- timeline_data %>% 
-   filter(domain == "Policy" | domain == "All")
+   filter(domain == "Policy")
 
 timevis(policy_timeline)
 ```
 
 **Here is the social timeline...** 
 
-```{r social events timeline, warning=FALSE, message=FALSE, fig.width=9.5, fig.height=7}
+```{r social events timeline, fig.height=3, fig.width=9.5, message=FALSE, warning=FALSE}
 social_timeline <- timeline_data %>% 
   filter(domain == "Social")
 
@@ -43,134 +44,30 @@ timevis(social_timeline)
 
 **And here is a summarized or selective timeline of events...** 
 
-```{r general timeline, fig.width=7, fig.height=9}
-setwd("~/Documents/Nutrition/impacts-and-echoes/data")
-timeline_data <- read_csv("interactive_timeline_data - final_timeline.csv")
-
+```{r general timeline, fig.width=9.5, fig.height=10.5}
 summarized_timeline <- timeline_data %>% 
   filter(final == "final")  
-
 plot <- timevis(summarized_timeline, 
-        #groups = data.frame(id = 1:6, content = c("Public Health", "Food", "Science", "Social", "Policy", "Conference")))
-        groups = data.frame(id = 1:6, content = c("Social", "Food", "Science", "Health", "Policy", "Conference")))
-
+        groups = data.frame(id = 1:6, content = c("Social", "Food", "Science", 
+                                                  "Health", "Policy", "Conference")))
 plot 
 ```
 
-```{r, fig.width=7, fig.height=9}
-setwd("~/Documents/Nutrition/history-of-nutrition-science")
+```{r, fig.width=7, fig.height=9, include = FALSE}
+setwd("~/Documents/Nutrition/impacts-and-echoes")
 htmlwidgets::saveWidget(plot, "timeline.html", selfcontained = F)
 ```
 
-```{r, fig.width=7, fig.height=9}
-setwd("~/Documents/Nutrition/history-of-nutrition-science")
-webshot("https://brandonleekramer.github.io/history-of-nutrition-science/timeline.html", file="timeline.pdf")
+```{r, fig.width=7, fig.height=9, include = FALSE}
+setwd("~/Documents/Nutrition/impacts-and-echoes/docs")
+webshot("https://brandonleekramer.github.io/impacts-and-echoes/timeline.html", file="timeline.pdf")
 ```
 
-```{r}
-
-timevis(data = data.frame(
-  start = c("2019-01-01", "2019-01-02", "2019-01-03", "2019-01-04"),
-  content = c("one", "two", "three", "four"),
-  group = c(1, 2, 1, 2)),
-  groups = data.frame(id = 1:2, content = c("G1", "G2"))) %>%
-  setGroups(data.frame(id = 1:2, content = c("Group 1", "Group 2")))
-
-data = data.frame(
-  start = c("2019-01-01", "2019-01-02", "2019-01-03", "2019-01-04"),
-  content = c("one", "two", "three", "four"),
-  group = c(1, 2, 1, 2))
-
-
-timevis(data = data, 
-  groups = data.frame(id = 1:2, content = c("G1", "G2")) %>% 
-    setGroups(data.frame(id = 1:2, content = c("Group 1", "Group 2"))))
-
-timevis(data = data.frame(
-  start = c("2019-01-01", "2019-01-02", "2019-01-03", "2019-01-04"),
-  content = c("one", "two", "three", "four"),
-  group = c(1, 2, 1, 2)),
-  groups = data.frame(id = 1:2, content = c("G1", "G2")))
-
-summarized_timeline <- timeline_data %>% 
-  filter(summary == "Summary") %>% 
-  select(id, start, end, content, group) %>%
-  filter(group == 1:3) 
-
-test <- timevis(summarized_timeline, 
-        groups = data.frame(id = 1:3, content = c("Science", "Policy", "Social")))
-test
-library(webshot)
-setwd("~/Documents/Nutrition/history-of-nutrition-science")
-webshot("https://brandonleekramer.github.io/history-of-nutrition-science/test.html", file="new_test.svg")
-
-```
-
-```{r test}
+We also worked on converting this interactive timeline to an .svg but this was not successful. 
 
 
 
 
-setwd("~/Documents/Nutrition/history-of-nutrition-science")
-htmlwidgets::saveWidget(test, "test.html", selfcontained = F)
-
-?export_widget
-install.packages("timelyportfolio")
-
-library(htmltools)
-html_print(test)
-
-install.packages("convertGraph")
-library(convertGraph)
-convertGraph("./Rplot.png", "./example.svg", path = "path to executable phantomJS" )
-
-export_widget(selector = NULL, width = 0, height = 0)
-
-install.packages("remotes")
-remotes::install_github("timelyportfolio/exportwidget")
-library("timelyportfolio")
-
-library(htmlwidgets)
-install.packages("DiagrammeRsvg")
-library("DiagrammeRsvg")
-setwd("~/Documents/Nutrition/history-of-nutrition-science")
-export_svg(test)
-```
-
-```{r}
-
-install.packages("webshot")
-library(vistime)
-library(plotly)
-library(webshot)
-setwd("~/Documents/Nutrition/history-of-nutrition-science")
-webshot("https://brandonleekramer.github.io/history-of-nutrition-science/test.html", file="new_test.svg")
-
-pres <- data.frame(Position = rep(c("President", "Vice"), each = 3),
-                   Name = c("Washington", rep(c("Adams", "Jefferson"), 2), "Burr"),
-                   start = c("1789-03-29", "1797-02-03", "1801-02-03"),
-                   end = c("1797-02-03", "1801-02-03", "1809-02-03"),
-                   color = c('#cbb69d', '#603913', '#c69c6e'),
-                   fontcolor = c("black", "white", "black"))
-?export                  
-chart <- vistime(pres, events="Position", groups="Name", title="Presidents of the USA")
-setwd("~/Documents/Nutrition/history-of-nutrition-science")
-#export(chart, file = "chart.svg")
-
-
-
-orca(chart, file = "chart.svg")
-plotly_IMAGE(chart, format = "svg", out_file = "output.svg")
-?webshot
-
-
-install.packages("gridSVG")
-library(gridSVG)
-library(svglite)
-webshot::install_phantomjs()
-
-
-```
 
 
 

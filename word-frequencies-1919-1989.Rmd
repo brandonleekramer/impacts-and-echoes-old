@@ -7,12 +7,12 @@ output: html_document
 
 ```{r setup, include = FALSE}
 rm(list = ls())
-knitr::opts_knit$set(root.dir = "~/Documents/Nutrition")
+knitr::opts_knit$set(root.dir = "~/Documents/Nutrition/impacts-and-echoes/data")
 for (pkg in c("tidyverse", "igraph", "bibliometrix", "tidytext", "ggplot2", "ggraph", "widyr", "plotly", "stringi")) {library(pkg, character.only = TRUE)}
 ```
 
 ```{r, include = FALSE, warning=FALSE, error=FALSE, result=FALSE}
-setwd("~/Documents/Nutrition")
+setwd("~/Documents/Nutrition/impacts-and-echoes/data")
 raw_data <- read_csv("all_abstracts (1919-1998).csv")
 #raw_data <- all_abstracts
 ```
@@ -75,7 +75,8 @@ We see lots of "health," but it actually gets much more interesting than that. W
 
 ```{r examining top diversity related words over time, fig.width=9, fig.height=7}
 terms_of_interest <- title_words %>% 
-  filter(word == "calorie" |  word == "sugar" | word == "fat" | word == "obesity" | word == "vitamin" |
+  filter(word == "calorie" |  word == "sugar" | 
+         word == "fat" | word == "obesity" | word == "vitamin" |
          word == "chronic" | word == "infectious") 
 
 per_year_graph <- ggplot() + geom_line(aes(y = n, x = year, colour = word),

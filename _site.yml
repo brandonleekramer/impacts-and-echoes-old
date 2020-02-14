@@ -1,7 +1,7 @@
-name: "history-of-nutrition-science-website"
+name: "impacts-and-echoes"
 output_dir: "."
 navbar:
-  title: "History of Nutrition Science"
+  title: "Impacts and Echoes: The Lasting Influence of the White House Conference on Food, Nutrition and Health"
   left:
     - text: "Home"
       href: index.html
@@ -13,3 +13,4 @@ navbar:
       href: word-frequencies-1919-1989.html 
     - text: "Word Frequencies (1990-2018)"
       href: word-frequencies-1990-2018.html 
+

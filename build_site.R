@@ -1,3 +1,3 @@
-setwd("~/Documents/Nutrition/history-of-nutrition-science")
+setwd("~/Documents/Nutrition/impacts-and-echoes")
 rmarkdown::render_site()
 
