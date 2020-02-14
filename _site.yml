@@ -1,13 +1,13 @@
 name: "impacts-and-echoes"
 output_dir: "."
 navbar:
-  title: "Impacts and Echoes: The Lasting Influence of the White House Conference on Food, Nutrition and Health"
+  #title: "Impacts and Echoes: The Lasting Influence of the White House Conference on Food, Nutrition and Health"
   left:
     - text: "Home"
       href: index.html
-    - text: "Timeline"
-      href: timeline.html 
-    - text: "Text Analysis of WHC"
+    - text: "Interactive Timeline"
+      href: interactive-timelines.html 
+    - text: "Text Analysis of WHC Report"
       href: 1969-whc-text-analysis.html      
     - text: "Word Frequencies (1919-1989)"
       href: word-frequencies-1919-1989.html 
