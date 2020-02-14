@@ -1,0 +1,66 @@
+---
+title: "Mortality Rates on Key Indicators (1950-2016)"
+author: "Brandon L. Kramer"
+date: "9/16/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list = ls())
+knitr::opts_knit$set(root.dir = "~/Documents/Nutrition")
+for (pkg in c("tidyverse", "igraph", "bibliometrix", "tidytext", "ggplot2", "ggraph", "widyr", "plotly", "stringi", "pdftools", "SnowballC", "googlesheets")) {library(pkg, character.only = TRUE)}
+```
+
+```{r pre-cleaning the data} 
+(my_sheets <- gs_ls())
+health_outcomes <- gs_url("https://docs.google.com/spreadsheets/d/1-adGYGcV7NTSyCTBetbdyEnmETHV-TzVmWzFZDMro9A/edit#gid=0")
+health_outcomes <- health_outcomes %>% gs_read(ws = "indicators", col_names = T) 
+health_outcomes <- as_tibble(t(health_outcomes))
+colnames(health_outcomes) = health_outcomes[1, ]; health_outcomes = health_outcomes[-1, ]         
+names(health_outcomes)[1]<-"Year"
+write_csv(health_outcomes, "longitudinal_health_data.csv"); rm(my_sheets) 
+```
+
+```{r importing data }
+(my_sheets <- gs_ls())
+raw_data <- gs_url("https://docs.google.com/spreadsheets/d/1-adGYGcV7NTSyCTBetbdyEnmETHV-TzVmWzFZDMro9A/edit#gid=0")
+health_outcomes <- raw_data %>% gs_read(ws = "indicators", col_names = T) 
+obesity <- raw_data %>% gs_read(ws = "obesity", col_names = T)
+```
+
+```{r graphing changes in health outcomes over time}
+
+heart_disease <- ggplot(data=health_outcomes, aes(x=Year, y = heart_disease)) +
+  geom_line(color = "blue", size = 0.8) + 
+  labs(title = "Trends in Heart Disease Mortality (1950-2018)", colour = "Health Outcomes") +
+  ylab("Age-adjusted death rate per 100,000 population") + theme_minimal() + 
+  scale_x_continuous(breaks=seq(1950, 2016, 10)) +
+  theme(plot.title = element_text(hjust = 0.5), 
+        legend.position = "none", axis.title.x = element_blank()); heart_disease
+
+malignant_neoplasms <- ggplot(data=health_outcomes, aes(x=Year, y = malignant_neoplasms)) +
+  geom_line(color = "red", size = 0.8) + 
+  labs(title = "Trends in Cancer Mortality (1950-2018)", colour = "Health Outcomes") +
+  ylab("Age-adjusted death rate per 100,000 population") + theme_minimal() + 
+  scale_x_continuous(breaks=seq(1950, 2016, 10)) +
+  theme(plot.title = element_text(hjust = 0.5), 
+        legend.position = "none", axis.title.x = element_blank()); malignant_neoplasms
+
+obesity_trends <- ggplot(data=obesity, aes(x=year)) +
+  geom_line(aes(y = overweight, colour = "Overweight")) + 
+  geom_line(aes(y = obesity, colour = "Obesity")) + 
+  geom_line(aes(y = extreme_obesity, colour = "Morbid Obesity")) + 
+  scale_size_manual(values = c(6,6,6)) +
+  labs(title = "Trends in Obesity (1962-2014)", colour = "Health Outcomes") + theme_minimal() +
+  ylab("Percentage of Population Obese") + theme(plot.title = element_text(hjust = 0.5), 
+        axis.title.x = element_blank()); obesity_trends
+
+# data source: https://www.cdc.gov/nchs/hus/contents2017.htm?search=Cancer (Table 17)
+# anemia rates from 1990--2016: https://www.indexmundi.com/facts/united-states/prevalence-of-anemia
+
+
+```
+
+
+
+

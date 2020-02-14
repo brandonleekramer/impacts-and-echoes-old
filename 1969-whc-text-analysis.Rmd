@@ -1,0 +1,139 @@
+---
+title: "1969 White House Conference Text Analysis"
+author: "Brandon Kramer"
+date: "8/26/2019"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+rm(list = ls())
+knitr::opts_knit$set(root.dir = "~/Documents/Nutrition")
+for (pkg in c("tidyverse", "igraph", "bibliometrix", "tidytext", "ggplot2", "ggraph", "widyr", "plotly", "stringi", "pdftools", "SnowballC")) {library(pkg, character.only = TRUE)}
+```
+
+First, we decided to get a basic idea of what was talked about in the 1969 White House Conference. To do this, we did a basic word frequency count, examined the text for bigrams (i.e. the most commonly occuring words that arise next to each other in the text), and then graphed those bigram relations using network analysis.
+
+Here are the 10 most commonly occuring words...
+
+```{r pulling data and basic word count, warning=FALSE, message=FALSE} 
+setwd("~/Documents/Nutrition/Literature")
+text_data <- pdf_text("1969 WHC Report.pdf") %>% 
+  readr::read_lines()
+conference_data <- tibble(text = text_data)
+
+conference_data <- conference_data %>% 
+  unnest_tokens(word, text) %>%
+  #mutate(word = wordStem(word)) %>%  # for stemming
+  anti_join(stop_words)
+
+my_stopwords <- tibble(word = c(as.character(1:6), 
+                                "1", "2", "3", "4", "tion", "pro", "7", "8", "378", "473", "11", "111", "iv", "ph", "m.d", "vi", "nutri"))
+conference_data <- conference_data %>% anti_join(my_stopwords)
+
+# recoding certain words 
+conference_data <- conference_data %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(program|programs)\\b"), 
+                       yes = "programs", no = word)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(stamp|stamps)\\b"), 
+                       yes = "stamps", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(school|schools)\\b"), 
+                       yes = "schools", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(system|systems)\\b"), 
+                       yes = "systems", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(sector|sectors)\\b"), 
+                       yes = "sectors", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(supply|supplies)\\b"), 
+                       yes = "systems", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(food|foods)\\b"), 
+                       yes = "food", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(policy|policies)\\b"), 
+                       yes = "policies", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(product|products)\\b"), 
+                       yes = "products", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(level|levels)\\b"), 
+                       yes = "levels", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(science|sciences)\\b"), 
+                       yes = "science", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(lunch|lunches)\\b"), 
+                       yes = "lunch", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(education|educational)\\b"), 
+                       yes = "education", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(nutrition|nutritional)\\b"), 
+                       yes = "nutrition", no = term)) %>% 
+  mutate(term = ifelse(test = str_detect(string = word, 
+                       pattern = "\\b(?i)(agency|agencies)\\b"), 
+                       yes = "agency", no = term)) %>% 
+  select(-word) %>% rename(word = term)
+
+word_counts <- conference_data %>%
+  count(word, sort = TRUE)
+
+word_counts %>% filter(word == "program" | word == "programs")
+```
+
+And the 10 most commonly occuring set of words (or bigrams)...
+
+```{r bigrams}
+conference_bigrams <- conference_data  %>%
+  unnest_tokens(bigram, word, token = "ngrams", n = 2)
+
+conference_bigrams %>%
+  count(bigram, sort = TRUE)
+
+conference_separated <- conference_bigrams %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+bigrams_filtered <- conference_separated %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+bigram_counts <- bigrams_filtered %>% 
+  count(word1, word2, sort = TRUE)
+```
+
+And here is the network of the bigram relations. In this network, nodes correspond to words and the ties between them refer to co-occurences. The strength of the ties is the number of times words co-occur in the 1969 White House Conference text. As you can see, the bulk of the document focuses on nutrition programs, including school lunch programs, food stamp programs, and nutrition education programs. 
+
+```{r text networks, fig.width=9, fig.height=7}
+set.seed(1234)
+bigram_network <- bigram_counts %>%
+  filter(n >= 15) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_node_point(size = 3.5) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) + theme_void()
+bigram_network
+```
+```{r output as svg, echo=FALSE, eval=FALSE, include=FALSE}
+class(bigram_network)
+#This actually save the plot in a image
+library(svglite)
+ggsave(file="bigram_network.svg", plot=image, width=10, height=8)
+```
+
+```{r output to gephi, echo=FALSE, eval=FALSE, include=FALSE}
+whc_edgelist <- bigram_counts %>% 
+  rename(source = word1,target = word2,weight = n) %>% 
+  filter(weight >= 15)
+write_csv(whc_edgelist, "whc-textnet-edgelist.csv")
+```
+
+
+
+
+

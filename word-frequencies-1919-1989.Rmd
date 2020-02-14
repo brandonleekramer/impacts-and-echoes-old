@@ -1,0 +1,125 @@
+---
+title: "Examining Discursive Trends in Nutrition, Health and Food Science"
+author: "Brandon Kramer"
+date: "8/28/2019"
+output: html_document 
+---
+
+```{r setup, include = FALSE}
+rm(list = ls())
+knitr::opts_knit$set(root.dir = "~/Documents/Nutrition")
+for (pkg in c("tidyverse", "igraph", "bibliometrix", "tidytext", "ggplot2", "ggraph", "widyr", "plotly", "stringi")) {library(pkg, character.only = TRUE)}
+```
+
+```{r, include = FALSE, warning=FALSE, error=FALSE, result=FALSE}
+setwd("~/Documents/Nutrition")
+raw_data <- read_csv("all_abstracts (1919-1998).csv")
+#raw_data <- all_abstracts
+```
+
+We also wanted to examine some trends in scientific abstracts over time. The first step was to download the data from Web of Science using "food OR nutrition OR health" as search terms. While this initially brought up a HUGE pool of publication, we found that the database availability of articles varied dramatically before and after 1990. Furthermore, we also found that abstracts were only reliably available for articles after 1990. Thus, on this page we cover a basic text analysis of titles of scientific articles on food, nutrition and health from 1919-1989 and the next tab covers article abstracts from 1990-2018. 
+
+```{r , fig.width=9, fig.height=7}
+text_data <- raw_data %>% rowid_to_column(var = "id") %>%
+  rename(author = AU, title = TI, publication = SO, abstract = AB, year = PY, subject = SC, department = C1, keyword = ID, doi = DI, country = PA)
+text_data <- select(text_data, id, author, title, publication, abstract, year, department, subject, keyword, doi, country)
+subset_data <- text_data %>% filter(year < 1989)
+
+by_year <- subset_data %>%
+  group_by(year) %>% 
+  count(year, sort = TRUE) %>% 
+  rename(apy = n) %>% 
+  ungroup()
+
+by_year_graph <- ggplot() + geom_line(aes(y = apy, x = year), data = by_year, stat="identity") + 
+  labs(title = "growth in nutrition-related articles from 1919-1989") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+by_year_graph <- ggplotly(by_year_graph); by_year_graph
+
+```
+
+As we see in this first graph, scientific publications grow substantially over the course of the 20th century (shocker!). This is only important because it means we need to control for article growth when looking generally at word frequencies.
+
+Speaking of word frequencies... let's take a look at that in the 1919-1989 database of article titles. 
+
+```{r wos abstract text analysis}
+# tokenizing the abstract data into words 
+title_data <- subset_data %>% 
+  unnest_tokens(word, title) %>% 
+  anti_join(stop_words)
+
+# most frequent word count in abstracts 
+title_data %>%
+  count(word, sort = TRUE)
+
+# adding custom set of stopwords 
+my_stopwords <- tibble(word = c(as.character(1:9), 
+                                "1", "2", "3", "4", "rights", "reserved", 
+                                "copyright", "elsevier", "5", "10"))
+title_data <- title_data %>% anti_join(my_stopwords)
+
+# looking at word frequencies by year 
+#title_words <- title_data %>%
+#  group_by(year) %>% 
+#  count(word, sort = TRUE) %>% ungroup(); title_words
+
+title_words <- title_data %>%
+  group_by(year) %>% 
+  count(word, sort = TRUE) %>% 
+  full_join(by_year, by = "year") %>% 
+  mutate(per_article = n / apy) %>% 
+  ungroup(); title_words
+```
+
+We see lots of "health," but it actually gets much more interesting than that. We decided to select some relevant keywords and graph those over time. Note that these graphs can be a bit messy. The good thing is that you can control what information this graph presents (and most other graphs moving forward). Just click on the word to the right and you can make that word trend disappear...
+
+```{r examining top diversity related words over time, fig.width=9, fig.height=7}
+terms_of_interest <- title_words %>% 
+  filter(word == "calorie" |  word == "sugar" | word == "fat" | word == "obesity" | word == "vitamin" |
+         word == "chronic" | word == "infectious") 
+
+per_year_graph <- ggplot() + geom_line(aes(y = n, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()); ggplotly()
+```
+
+In this graph, it seems like interest in chronic disease, fat/obesity and vitamins are the most prominent growth trends. 
+
+```{r controlling for article size, fig.width=9, fig.height=7}
+per_article_graph <- ggplot() + geom_line(aes(y = per_article, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time \n(controlling for publications per year)") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()); ggplotly()
+
+```
+
+However, we when control for the number of articles (i.e. taking the number of times the word occurs in all abstracts each year and then dividing it by the total number of articles published in that year), we see these growth trends are mostly just about the number of articles published on those topics each year. In other words, research being conducted on those topics is growing but researchers are not mentioning those specific terms that much more in each abstract. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

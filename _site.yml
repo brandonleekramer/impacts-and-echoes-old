@@ -1,0 +1,15 @@
+name: "history-of-nutrition-science-website"
+output_dir: "."
+navbar:
+  title: "History of Nutrition Science"
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "Timeline"
+      href: timeline.html 
+    - text: "Text Analysis of WHC"
+      href: 1969-whc-text-analysis.html      
+    - text: "Word Frequencies (1919-1989)"
+      href: word-frequencies-1919-1989.html 
+    - text: "Word Frequencies (1990-2018)"
+      href: word-frequencies-1990-2018.html 

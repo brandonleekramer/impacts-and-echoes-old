@@ -1,0 +1,203 @@
+---
+title: "Text Analysis of Top Nutrition Journals (1990-2018)"
+author: "Brandon L. Kramer"
+date: "8/27/2019"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+rm(list = ls())
+knitr::opts_knit$set(root.dir = "~/Documents/Nutrition")
+for (pkg in c("tidyverse", "igraph", "bibliometrix", "tidytext", "ggplot2", "ggraph", "widyr", "plotly", "stringi")) {library(pkg, character.only = TRUE)}
+setwd("~/Documents/Nutrition/Abstracts Dataset/Select Journals (1990-2018)")
+raw_data <- read_csv("select_abstracts (1990-2018).csv")
+```
+
+Now, lets look at publications that came out after 1990. We see that dramatic growth in overall scientific productivity continues and intensifies after 2010. 
+
+```{r overall publications, fig.width=9, fig.height=7}
+text_data <- raw_data %>% 
+  rowid_to_column(var = "id") %>%
+  rename(author = AU, title = TI, publication = SO, abstract = AB, year = PY, subject = SC, department = C1, keyword = ID, doi = DI, country = PA)
+text_data <- select(text_data, id, author, title, publication, abstract, year, department, subject, keyword, doi, country)
+by_year <- text_data %>%
+  #filter(year < 2018) %>% 
+  group_by(year) %>% 
+  count(year, sort = TRUE) %>% 
+  rename(apy = n) %>% 
+  ungroup()
+text_data <- text_data %>% 
+  full_join(by_year, by = "year")
+by_year_graph <- ggplot() + geom_line(aes(y = apy, x = year), data = by_year, stat="identity") + 
+  labs(title = "publication growth in nutrition, food and \nhealth literature from 1990-2018 in select journals") +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+by_year_graph <- ggplotly(by_year_graph); by_year_graph
+
+```
+
+We also see that the number of words mentioned in the abstracts diversifies, which is not surprising given the shift from titles to abstracts.
+
+```{r wos abstract text analysis}
+# tokenizing the abstract data into words 
+abstract_data <- text_data %>% 
+  unnest_tokens(word, abstract) %>% 
+  anti_join(stop_words)
+
+# most frequent word count in abstracts 
+abstract_data %>%
+  count(word, sort = TRUE) 
+
+# adding custom set of stopwords 
+my_stopwords <- tibble(word = c(as.character(1:11), 
+                                "1", "2", "3", "4", "rights", "reserved", 
+                                "copyright", "elsevier", "5", "10", "95"))
+abstract_data <- abstract_data %>% 
+  anti_join(my_stopwords)
+
+# looking at word frequencies by year 
+abstract_words <- abstract_data %>%
+  group_by(year) %>% 
+  count(word, sort = TRUE) %>% 
+  full_join(by_year, by = "year") %>% 
+  mutate(per_article = n / apy) %>% 
+  ungroup(); abstract_words
+```
+
+## Mapping word frequency trends in scientific abstracts over time
+
+Initially, I recieved a list of words that could have been interesting to examine over time. Some of those words were interesting and others had not real variation in our database of abstracts. I decided to provide several graphs (of the interesting words) and cluster them conceptually. 
+
+First, I graphed interest in fat and obesity over time as well as the common causes that are mentioned in confluence with that topic. On the left you can see raw growth in certain words over time (fat, obesity, overweight, sugar, genetic, and stress) as well as their occurence per abstract on the right. To find the count total per year and which word it is, you can just hover your mouse over the different colored lines. Perhaps the most interesting trend here is that interest in fat and obesity makes a conceptual shift over time... moving from a focus on "fat" to a focus on "obesity" around 2000, intensifying around 2010. After reading Guthman and DuPois's (2006) "Embodying Neoliebralism," I realized that this scientific change in focus could be triggered by Kuczmarski and Flegal's (2000) paper that suggested the BMI cutoff should be changed from 27 to 25. This, of course, made millions of Americans obese overnight without them gaining a pound. Not surprisingly, five years later scientists seem much more interested in studying obesity.
+
+```{r analysis 1, fig.width=9, fig.height=7}
+terms_of_interest <- abstract_words %>% 
+  filter(word == "fat" | word == "obesity" | word == "sugar" | word == "genetic" | word == 'stress' | word == "overweight") 
+
+per_year_graph <- ggplot() + geom_line(aes(y = n, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()); ggplotly()
+
+per_article_graph <- ggplot() + geom_line(aes(y = per_article, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time \n(controlling for publications per year)") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+
+subplot <- subplot(per_year_graph, per_article_graph); hide_legend(subplot) 
+```
+
+Next, I looked at various chronic diseases including cancer, cardiovascular disease, diabetes, obesity. metabolic disorders, and infectious diseases. The most interesting thing in this set of graphs cancer is the most researched topic followed by diabetes, which is surprisgly more prominent than both obesity and cardiovascular disease. 
+
+```{r analysis 2, fig.width=9, fig.height=7}
+terms_of_interest <- abstract_words %>% 
+  filter(word == "cancer" | word == "cardiovascular" | word == "diabetes" | word == "obesity" | word == "infectious" | word == "metabolic") 
+
+per_year_graph <- ggplot() + geom_line(aes(y = n, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()); ggplotly()
+
+per_article_graph <- ggplot() + geom_line(aes(y = per_article, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time \n(controlling for publications per year)") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+
+subplot <- subplot(per_year_graph, per_article_graph); hide_legend(subplot)
+```
+
+Here, we see some variation in basic nutrients over time. The focus on protein and vitamins is far and away the most prominent. Surprisingly, "mineral" and "saturated" as in saturated fat remains rather low throughout this period. 
+
+```{r analysis 3, fig.width=9, fig.height=7}
+terms_of_interest <- abstract_words %>% 
+  filter(word == "vitamin" | word == "protein" | word == "iron" | word == "cholesterol" | word == "carbohydrate" | word == "mineral" | word == "saturated"
+         ) 
+
+per_year_graph <- ggplot() + geom_line(aes(y = n, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()); ggplotly()
+
+per_article_graph <- ggplot() + geom_line(aes(y = per_article, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time \n(controlling for publications per year)") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+
+subplot <- subplot(per_year_graph, per_article_graph); hide_legend(subplot)
+```
+
+One surprising trend that came up was how often scientists mentioned evidence and data. Around 2010, we see that researchers tend to mention data, quality, evidence, treatment and trial more often. In the set of graphs below that, we also see that these publications seem to employ patients and participants more often. We also see that the term "women" is also mentioned more often, which was likely sparked by the NIH's iniative in the early 1990's to diversity populations in clinical trials and scientific research more broadly. While the NIH policy also tried to bolster the representation of racial and ethnic minorities, there was not much evidence in this specific word frequency analysis to suggest that this way happening in the nutrition sciences.   
+
+```{r analysis 4, fig.width=9, fig.height=7}
+terms_of_interest <- abstract_words %>% 
+  filter(word == 'data' | word == 'evidence' | word == 'trial'| word == 'quality' | word == 'treatment' | word == 'patients' | word == 'participants'
+         )  
+
+per_year_graph <- ggplot() + geom_line(aes(y = n, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()); ggplotly()
+
+per_article_graph <- ggplot() + geom_line(aes(y = per_article, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time \n(controlling for publications per year)") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+
+subplot <- subplot(per_year_graph, per_article_graph); hide_legend(subplot) 
+
+```
+
+
+
+```{r analysis 5, fig.width=9, fig.height=7}
+
+terms_of_interest <- abstract_words %>% 
+  filter(
+         word == 'patients' | word == 'participants' | word == 'women' | word == 'age' | 
+         word == 'racial' | word == "ethnic" | word == "diversity"
+         ) 
+
+per_year_graph <- ggplot() + geom_line(aes(y = n, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()); ggplotly()
+
+per_article_graph <- ggplot() + geom_line(aes(y = per_article, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time \n(controlling for publications per year)") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+
+subplot <- subplot(per_year_graph, per_article_graph); hide_legend(subplot) 
+```
+
+Lastly, we wanted to look at prominent "buzzwords" like genetic, genomic, epigenetic, metabolomic, and microbiome. The big thing that should pop out about these trends is that almost all of those buzzwords are pretty infrequent in comparison with genetic... and even that word is small in comparison with other words like fat/obesity and stress (see the very first graph on this page for a comparison).
+
+```{r analysis 6 , fig.width=9, fig.height=7}
+terms_of_interest <- abstract_words %>% 
+  filter(word == "microbiome" | word == "epigenetic" | word == "genomic" | word == "metabolomic" | word == 'genetic' 
+         ) 
+
+per_year_graph <- ggplot() + geom_line(aes(y = n, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+
+per_article_graph <- ggplot() + geom_line(aes(y = per_article, x = year, colour = word),
+                     data = terms_of_interest, stat="identity") + 
+  labs(title = "growth in terminology over time \n(controlling for publications per year)") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()); ggplotly()
+
+subplot <- subplot(per_year_graph, per_article_graph); hide_legend(subplot)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
